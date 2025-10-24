@@ -1,14 +1,21 @@
 // app/page.tsx
 'use client';
 
+// 1. 'Component' no se usaba, lo he eliminado.
 import React, { useEffect, useRef } from 'react';
-import Header from './components/Header';
+import ParticlesBg from 'particles-bg';
 import HeroSection from './components/HeroSection';
 import ChatIntro from './components/ChatIntro';
+import OurTeam from './components/OurTeam';
+import Trayectoria from './components/Trayectoria';
 
 export default function Page() {
   const orbRef = useRef<HTMLDivElement>(null);
-  // Lógica para la transición suave del orbe con el scroll
+
+  // Restaurar la posición de scroll al montar la página
+  // La restauración/guardado de la posición se maneja globalmente por ScrollRestorer
+
+  // Lógica del scroll (SIN CAMBIOS)
   useEffect(() => {
     const orb = orbRef.current;
     if (!orb) return;
@@ -16,54 +23,73 @@ export default function Page() {
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const heroHeight = window.innerHeight;
-      // El progreso va de 0 (top) a 1 (inicio de la sección de chat)
       const progress = Math.min(scrollY / (heroHeight * 0.7), 1);
-
-      // -- Actualizar Body Class --
-      // Activa el modo chat un poco antes de llegar para que la transición sea suave
       const active = progress > 0.1;
       document.body.classList.toggle('chat-active', active);
       const heroText = document.querySelector('#hero .hero-text-container') as HTMLElement;
       if (heroText) {
         heroText.style.opacity = `${1 - progress * 2}`;
       }
-
-      // -- Interpolar propiedades del Orbe --
-      // Tamaños (de grande a pequeño)
       const initialSize = 300;
       const finalSizeDesktop = 150;
       const currentSize = initialSize - (initialSize - finalSizeDesktop) * progress;
-
-      // Posiciones (de centro a la izquierda)
-      const initialTop = 50; // 50%
-      const finalTop = 50; // 50%
-      const initialLeft = 50; // 50%
-      const finalLeft = 15; // 15%
+      const initialTop = 50;
+      const finalTop = 50;
+      const initialLeft = 50;
+      const finalLeft = 15;
       const currentTop = initialTop - (initialTop - finalTop) * progress;
       const currentLeft = initialLeft - (initialLeft - finalLeft) * progress;
-
-      // Aplicar estilos directamente para una animación fluida con el scroll
       orb.style.width = `${currentSize}px`;
       orb.style.height = `${currentSize}px`;
       orb.style.top = `${currentTop}%`;
       orb.style.left = `${currentLeft}%`;
-      orb.style.transform = `translate(-50%, -50%)`; // Mantenemos solo la corrección del centrado
+      orb.style.transform = `translate(-50%, -50%)`;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Ejecutar una vez al inicio
+    handleScroll();
+    // Guardar la posición en sessionStorage cuando la página se descarga/oculta
+    const savePosition = () => {
+      try {
+        const key = `scroll-pos:${location.pathname}`;
+        sessionStorage.setItem(key, String(window.scrollY));
+      } catch {
+        // noop
+      }
+    };
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    // visibilitychange para capturar cambios de pestaña
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') savePosition();
+    };
+
+    window.addEventListener('beforeunload', savePosition);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('beforeunload', savePosition);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   return (
     <div className="font-roboto">
-      <Header />
       <main>
-        <HeroSection />
+        <div className=''>
+          <div className="absolute inset-0 z-[-10] w-full h-screen flex items-center justify-center">
+            <ParticlesBg
+              type="cobweb"
+              color='#6053FC'
+              bg={true}
+            />
+          </div>
+          <HeroSection />
+        </div>
         <ChatIntro />
-
-      </main>
-    </div>
+        <OurTeam />
+        <Trayectoria />
+      </main >
+    </div >
   );
 }
