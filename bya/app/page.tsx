@@ -80,7 +80,7 @@ export default function Page() {
           <div className="absolute inset-0 z-[-10] w-full h-screen flex items-center justify-center">
             <ParticlesBg
               type="cobweb"
-              color='#6053FC'
+              color='#00aaff'
               bg={true}
             />
           </div>
