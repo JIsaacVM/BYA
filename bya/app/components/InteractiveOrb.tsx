@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
+import './InteractiveOrb.css'; // <-- AÑADE ESTA LÍNEA
 
 interface InteractiveOrbProps {
     size?: number; // px (ancho/alto) - usado por estilos si se necesita

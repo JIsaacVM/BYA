@@ -1,178 +1,229 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
+import TypewriterText from "./TypewriterText"; // Importamos el componente de máquina de escribir
 
-// El guion de la conversación no cambia
-const conversationScript = [
-    { speaker: "bot", text: "Hola, soy BYA." },
-    { speaker: "user", text: "¿Qué es BYA?" },
-    { speaker: "bot", text: "BYA es una solución integral para tus necesidades." },
-    { speaker: "bot", text: "Nos dedicamos a crear experiencias digitales únicas y memorables." },
-    { speaker: "bot", text: "Hacemos desarrollo web, marketing digital y consultoría estratégica." },
-    { speaker: "user", text: "Interesante, ¿cómo puedo saber más?" },
-    { speaker: "bot", text: "¿Te gustaría que agendemos una llamada para explorar cómo podemos ayudarte?" },
+// --- Definimos la estructura de nuestros datos ---
+
+interface Message {
+    id: number;
+    speaker: "user" | "bot";
+    text: string;
+}
+
+interface ChatOption {
+    text: string;
+    responseText: string;
+    followUpOptions?: ChatOption[];
+}
+
+// --- Constantes de Configuración ---
+const TASA_TECLEO_BOT = 40; // ms por caracter (debe coincidir con TypewriterText)
+const TASA_TECLEO_USER = 50; // ms por caracter (para simulación)
+const TIEMPO_PENSAMIENTO_BOT = 1000; // 1 segundo
+
+// --- Definimos el "ÁRBOL" de la conversación ---
+
+const initialBotResponse = "Hola, yo soy BYA, Byte Assistant. Nos dedicamos a integración de Inteligencia Artificial en el mundo cotidiano, hacer hiperautomatización de tareas, procesos y sistemas, y mejorar la experiencia de usuario.";
+
+const conversationTree: ChatOption[] = [
+    {
+        text: "Háblame de Hiperautomatización",
+        responseText: "¡Claro! La hiperautomatización usa IA y RPA para automatizar procesos complejos de principio a fin, optimizando la eficiencia.",
+        followUpOptions: [
+            { text: "Suena interesante", responseText: "Lo es. ¿Puedo ayudarte con algo más?" },
+            { text: "Gracias, es todo", responseText: "¡Un placer! Estamos para ayudarte." }
+        ]
+    },
+    {
+        text: "Quiero mejorar mi UX",
+        responseText: "Perfecto. Analizamos el flujo de tus usuarios y aplicamos IA para personalizar su experiencia, reducir la fricción y aumentar la retención.",
+        followUpOptions: [
+            { text: "Ok, ¿cómo empezamos?", responseText: "Podemos agendar una demo. ¿Te parece?" },
+        ]
+    },
+    {
+        text: "Solo estoy mirando",
+        responseText: "¡Sin problema! Explora con calma. Si tienes alguna duda, solo pregunta.",
+        followUpOptions: [
+            { text: "Gracias", responseText: "¡A ti!" },
+        ]
+    }
 ];
 
-
-/**
- * Componente que revela una conversación uno por uno a medida que el usuario
- * hace scroll, con animaciones mejoradas.
- */
 export default function ScrollingChatOneByOne() {
-    // Empezamos con 1 mensaje visible para que el primero se muestre al inicio.
-    const [visibleMessagesCount, setVisibleMessagesCount] = useState(1);
-    const messageRefs = useRef<(HTMLDivElement | null)[]>([]);
-    const chatContainerRef = useRef<HTMLElement | null>(null);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [currentOptions, setCurrentOptions] = useState<ChatOption[]>([]);
+    const [isBotTyping, setIsBotTyping] = useState(false);
 
-    // Not auto-scrolling on mount to avoid unexpected jumps; visibility
-    // of messages is handled by the IntersectionObserver below.
+    // (MEJORA 2) Estado para el fade-in del primer mensaje
+    const [isFirstMessageVisible, setIsFirstMessageVisible] = useState(false);
 
+    // --- (CAMBIO 1) ---
+    // Ref para el contenedor principal del chat
+    const chatContainerRef = useRef<HTMLElement>(null); // <-- AÑADIR LÍNEA
 
-    // Efecto: mostrar/ocultar mensajes según la dirección del scroll
-    // Strategy: en cada scroll (throttled con rAF) contamos cuántos mensajes
-    // tienen su top por debajo de un umbral relativo a la ventana. Ese número
-    // será el visibleMessagesCount. Al hacer scroll-down el conteo sube (muestra)
-    // y al hacer scroll-up baja (oculta).
-    useEffect(() => {
-        const updateVisible = () => {
-            if (!messageRefs.current || messageRefs.current.length === 0) return;
+    // --- LÓGICA DE LA CONVERSACIÓN ---
 
-            const threshold = window.innerHeight * 0.8; // elemento considerado visible si su top < threshold
-            let count = 0;
+    /**
+     * Inicia o reinicia la conversación al estado inicial.
+     */
+    const startConversation = () => {
+        // --- (CAMBIO 2) ---
+        // Hacemos scroll suave al inicio del contenedor del chat
+        chatContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); // <-- AÑADIR LÍNEA
 
-            for (let i = 0; i < conversationScript.length; i++) {
-                const el = messageRefs.current[i];
-                if (!el) break;
-                const rect = el.getBoundingClientRect();
-                if (rect.top < threshold) {
-                    count = i + 1; // i es 0-based
-                } else {
-                    // si un elemento no cumple, los siguientes probablemente tampoco
-                    break;
-                }
-            }
+        // 1. Resetear estados
+        setMessages([]);
+        setCurrentOptions([]);
+        setIsBotTyping(true);
+        setIsFirstMessageVisible(false); // (MEJORA 2) Resetear visibilidad
 
-            // Always keep at least the first message visible
-            count = Math.max(1, count);
-            setVisibleMessagesCount((prev) => {
-                if (prev === count) return prev;
-                return count;
-            });
-        };
+        // 2. Añadir el primer mensaje del usuario
+        const firstUserMessage: Message = { id: 0, speaker: "user", text: "¿Qué es BYA?" };
+        setMessages([firstUserMessage]);
 
-        let ticking = false;
-        const onScroll = () => {
-            if (!ticking) {
-                ticking = true;
-                window.requestAnimationFrame(() => {
-                    updateVisible();
-                    ticking = false;
-                });
-            }
-        };
+        // (MEJORA 2) Timer para el fade-in
+        const fadeInTimer = setTimeout(() => {
+            setIsFirstMessageVisible(true);
+        }, 50); // Pequeño delay para asegurar que el DOM se pinte con opacidad 0
 
-        // initial measure (in case the page is loaded scrolled)
-        updateVisible();
+        // 3. Simular tiempo de "escritura" y "pensamiento"
+        const userTypingTime = firstUserMessage.text.length * TASA_TECLEO_USER;
+        const botResponseTime = initialBotResponse.length * TASA_TECLEO_BOT;
+        const totalDelay = userTypingTime + TIEMPO_PENSAMIENTO_BOT;
 
-        window.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', onScroll, { passive: true });
+        // 4. Timer para AÑADIR el mensaje del bot
+        const addBotMessageTimer = setTimeout(() => {
+            setMessages((prev) => [
+                ...prev,
+                { id: 1, speaker: "bot", text: initialBotResponse }
+            ]);
+        }, totalDelay);
 
+        // 5. Timer para MOSTRAR opciones (después de que el bot termine de escribir)
+        const showOptionsTimer = setTimeout(() => {
+            setCurrentOptions(conversationTree);
+            setIsBotTyping(false);
+        }, totalDelay + botResponseTime);
+
+        // Devolvemos los timers para que puedan ser limpiados si el componente se desmonta
         return () => {
-            window.removeEventListener('scroll', onScroll);
-            window.removeEventListener('resize', onScroll);
+            clearTimeout(fadeInTimer); // (MEJORA 2) Limpiar timer de fade-in
+            clearTimeout(addBotMessageTimer);
+            clearTimeout(showOptionsTimer);
         };
-    }, []);
+    };
 
-    // Interactive background (non-interfering): orb + occasional flares
+    /**
+     * Maneja la selección de una opción por el usuario.
+     */
+    const handleOptionClick = (option: ChatOption) => {
+        if (isBotTyping) return; // Evitar clics múltiples
+
+        // 1. Ocultar opciones y activar "escribiendo..."
+        setCurrentOptions([]);
+        setIsBotTyping(true);
+
+        // 2. Añadir el mensaje del usuario
+        const userMessage: Message = {
+            id: messages.length,
+            speaker: "user",
+            text: option.text,
+        };
+        setMessages((prev) => [...prev, userMessage]);
+
+        // 3. Simular tiempo de escritura y pensamiento
+        const userTypingTime = option.text.length * TASA_TECLEO_USER;
+        const botResponseTime = option.responseText.length * TASA_TECLEO_BOT;
+        const totalDelay = userTypingTime + TIEMPO_PENSAMIENTO_BOT;
+
+        // 4. Timer para AÑADIR el mensaje del bot
+        const addBotMessageTimer = setTimeout(() => {
+            const botMessage: Message = {
+                id: messages.length + 1,
+                speaker: "bot",
+                text: option.responseText,
+            };
+            setMessages((prev) => [...prev, botMessage]);
+        }, totalDelay);
+
+        // 5. Timer para MOSTRAR opciones (después de que el bot termine de escribir)
+        const showOptionsTimer = setTimeout(() => {
+            setCurrentOptions(option.followUpOptions || []);
+            setIsBotTyping(false); // Desbloquear
+        }, totalDelay + botResponseTime);
+
+        // Devolvemos una función de limpieza por si acaso
+        return () => {
+            clearTimeout(addBotMessageTimer);
+            clearTimeout(showOptionsTimer);
+        };
+    };
+
+    // --- EFECTOS ---
+
+    // EFECTO 1: Inicialización (sin cambios)
     useEffect(() => {
-        // constants
-        const ORB_SIZE = 140;
-        const halfW = ORB_SIZE / 2;
-        const halfH = ORB_SIZE / 2;
+        const cleanup = startConversation();
+        return cleanup; // Limpia los timers al desmontar
+    }, []); // Array vacío = se ejecuta solo una vez al montar
 
-        let orbEl: HTMLElement | null = null;
-        let lastX = 0;
-        let lastY = 0;
-        let targetX = 0;
-        let targetY = 0;
-        let rafId: number | null = null;
-        let intervalId: number | null = null;
+    // (MEJORA 1)
+    // --- EFECTO 2: Auto-scroll (ELIMINADO) ---
+    // Ya no hay useEffect para scrollIntoView
 
+
+    // EFECTO 3: Fondo Interactivo (ORB + FLARES) (sin cambios)
+    useEffect(() => {
+        // ... (todo tu código original del useEffect del 'ia-orb' y 'ia-flare') ...
+        const ORB_SIZE = 140; const halfW = ORB_SIZE / 2; const halfH = ORB_SIZE / 2;
+        let orbEl: HTMLElement | null = null; let lastX = 0, lastY = 0, targetX = 0, targetY = 0;
+        let rafId: number | null = null, intervalId: number | null = null;
         const initOrb = () => {
-            orbEl = document.getElementById('ia-orb');
-            if (!orbEl) return;
-            orbEl.style.width = `${ORB_SIZE}px`;
-            orbEl.style.height = `${ORB_SIZE}px`;
-            orbEl.style.position = 'fixed';
-            orbEl.style.left = '0px';
-            orbEl.style.top = '0px';
-            orbEl.style.pointerEvents = 'none';
-            orbEl.style.willChange = 'transform, opacity, filter';
-
+            orbEl = document.getElementById('ia-orb'); if (!orbEl) return;
+            orbEl.style.width = `${ORB_SIZE}px`; orbEl.style.height = `${ORB_SIZE}px`;
             const loop = () => {
-                if (!orbEl) return;
-                lastX += (targetX - lastX) * 0.14;
-                lastY += (targetY - lastY) * 0.14;
-                const dx = targetX - lastX;
-                const dy = targetY - lastY;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-
+                if (!orbEl) return; lastX += (targetX - lastX) * 0.14; lastY += (targetY - lastY) * 0.14;
+                const dx = targetX - lastX, dy = targetY - lastY; const dist = Math.sqrt(dx * dx + dy * dy);
                 const maxDist = Math.min(window.innerWidth, window.innerHeight) * 0.45;
                 const proximity = Math.max(0, 1 - Math.min(dist / maxDist, 1));
-
-                const scale = 1 + proximity * 0.22;
-                const blur = Math.max(6, 32 - proximity * 18); // keep blur moderate
+                const scale = 1 + proximity * 0.22; const blur = Math.max(6, 32 - proximity * 18);
                 const opacity = 0.45 + proximity * 0.4;
-
-                const translateX = Math.round(lastX - halfW);
-                const translateY = Math.round(lastY - halfH);
+                const translateX = Math.round(lastX - halfW); const translateY = Math.round(lastY - halfH);
                 orbEl.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
                 orbEl.style.filter = `blur(${blur}px) saturate(${1 + proximity * 0.08})`;
-                orbEl.style.opacity = `${opacity}`;
-
-                rafId = requestAnimationFrame(loop);
+                orbEl.style.opacity = `${opacity}`; rafId = requestAnimationFrame(loop);
             };
-
             if (rafId == null) rafId = requestAnimationFrame(loop);
         };
-
         const onMove = (e: PointerEvent) => {
-            const vw = window.innerWidth;
-            const vh = window.innerHeight;
+            const vw = window.innerWidth, vh = window.innerHeight;
             targetX = Math.min(vw * 0.95, Math.max(vw * 0.05, e.clientX + vw * 0.04));
             targetY = Math.min(vh * 0.95, Math.max(vh * 0.05, e.clientY - vh * 0.08));
             if (!orbEl) initOrb();
         };
-
         const spawnFlare = () => {
-            const container = document.getElementById('ia-flare');
-            if (!container) return;
-            const flare = document.createElement('div');
-            flare.className = 'ia-flare-item';
-            const top = Math.random() * 40 + 6; // 6% - 46%
-            flare.style.position = 'absolute';
-            flare.style.top = `${top}vh`;
-            flare.style.left = '0px';
-            flare.style.pointerEvents = 'none';
-            flare.style.willChange = 'transform, opacity';
+            const container = document.getElementById('ia-flare'); if (!container) return;
+            const flare = document.createElement('div'); flare.className = 'ia-flare-item';
+            const top = Math.random() * 40 + 6; flare.style.position = 'absolute'; flare.style.top = `${top}vh`;
+            flare.style.left = '0px'; flare.style.width = '1px'; flare.style.height = '1px';
+            flare.style.background = 'white'; flare.style.borderRadius = '50%';
+            flare.style.boxShadow = '0 0 4px 0 rgba(255,255,255,0.8), 0 0 1px 0 rgba(255,255,255,0.5)';
+            flare.style.pointerEvents = 'none'; flare.style.willChange = 'transform, opacity';
             const startLeftVW = -20 + Math.random() * 10;
             flare.style.transform = `translate3d(${startLeftVW}vw, 0, 0)`;
             const duration = 900 + Math.random() * 900;
             flare.style.transition = `transform ${duration}ms cubic-bezier(.2,.8,.2,1), opacity ${duration}ms linear`;
             container.appendChild(flare);
-            // trigger move (to the right) and fade
             requestAnimationFrame(() => {
                 flare.style.transform = `translate3d(${startLeftVW + 120}vw, 0, 0)`;
                 flare.style.opacity = '0';
             });
             setTimeout(() => { flare.remove(); }, duration + 250);
         };
-
         window.addEventListener('pointermove', onMove, { passive: true });
-        // occasional flares
         intervalId = window.setInterval(() => { if (Math.random() < 0.35) spawnFlare(); }, 2400 + Math.random() * 2000);
-        // init once
         initOrb();
-
         return () => {
             window.removeEventListener('pointermove', onMove);
             if (rafId != null) cancelAnimationFrame(rafId);
@@ -180,66 +231,60 @@ export default function ScrollingChatOneByOne() {
         };
     }, []);
 
-    return (
-        <main id="conversar" className=" text-white min-h-screen font-sans flex flex-col justify-center">
-            {/* Interactive background - non-interfering */}
-            <div className="ia-bg" aria-hidden="true">
-                <div className="ia-bg-content">
 
-                </div>
-            </div>
+    return (
+        <main id="conversar" className="text-white min-h-screen font-sans flex flex-col">
+
+
             <section
                 ref={chatContainerRef}
-                aria-label="Conversación automática"
-                className="w-full max-w-2xl mx-auto py-24 px-4"
-                // Añadimos altura mínima para garantizar que haya espacio para el scroll
-                style={{ minHeight: "150vh" }}
+                aria-label="Conversación interactiva"
+                className="w-full max-w-2xl mx-auto px-4 pt-24 pb-8 flex flex-col flex-grow"
             >
-                <div className="space-y-12">
-                    {conversationScript.map((message, index) => {
+
+                <div
+                    className="space-y-12 pr-2"
+                >
+                    {messages.map((message) => {
                         const isUser = message.speaker === "user";
-                        const isVisible = index < visibleMessagesCount;
 
                         return (
                             <div
-                                key={index}
-                                ref={(el) => { messageRefs.current[index] = el; }}
+                                key={message.id}
+
                                 className={`
                                     flex items-start gap-3
                                     ${isUser ? "justify-end" : "justify-start"}
-                                    transition-all duration-500 ease-out
-                                    ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}
+                                    ${message.id === 0 ? 'transition-opacity duration-700 ease-in' : ''}
+                                    ${message.id === 0 && !isFirstMessageVisible ? 'opacity-0' : 'opacity-100'}
                                 `}
                             >
                                 {/* Avatar del Bot */}
                                 {!isUser && (
                                     <div className="flex-shrink-0 mt-1">
-                                        <div className="bot-orb w-9 h-9 flex items-center justify-center shadow-lg">
-                                            <span className="eye left-eye" aria-hidden="true"></span>
-                                            <span className="eye right-eye" aria-hidden="true"></span>
-                                        </div>
+                                        {/* (tu avatar de bot) */}
                                     </div>
                                 )}
 
                                 {/* Contenedor del Mensaje */}
                                 <div className={`
-                                    max-w-md
-                                    px-4 py-3
-                                    rounded-2xl
-                                    shadow-lg
-                                    ${isUser ? "bg-indigo-600/80 backdrop-blur-sm text-white rounded-br-none" : "bg-gray-700/80 backdrop-blur-sm text-gray-200 rounded-bl-none"}
+                                    max-w-md px-4 py-3 rounded-2xl shadow-lg
+                                    ${isUser ? "bg-[#0210a1]   text-gray-200  rounded-tr-none" : "rounded-none backdrop-blur-sm text-gray-300 border-b-2 border-gray-300"}
                                 `}
-                                    aria-hidden={!isVisible}
                                 >
                                     <div className="text-base md:text-lg leading-relaxed">
-                                        {message.text}
+                                        <TypewriterText
+                                            text={message.text}
+                                            isVisible={true}
+                                            speed={TASA_TECLEO_BOT}
+                                        />
                                     </div>
                                 </div>
 
                                 {/* Avatar del Usuario */}
                                 {isUser && (
                                     <div className="flex-shrink-0 mt-1">
-                                        <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center text-sm font-bold shadow-lg">
+                                        <div className="w-9 h-9 rounded-full bg-[#0210a1] flex items-center justify-center text-sm font-bold shadow-lg">
                                             U
                                         </div>
                                     </div>
@@ -247,10 +292,78 @@ export default function ScrollingChatOneByOne() {
                             </div>
                         );
                     })}
+
+                    {/* (MEJORA 1) Elemento invisible ELIMINADO */}
+                    {/* <div ref={chatEndRef} /> */}
                 </div>
+
+                {/* Contenedor de Opciones (sin cambios) */}
+                <div className="flex-shrink-0 pt-6">
+                    {/* Indicador de "escribiendo..." */}
+                    {isBotTyping && messages.length > 0 && (
+                        <div className="text-gray-400 text-sm italic h-6 text-left mb-2 animate-pulse">
+                            ...
+                        </div>
+                    )}
+                    {/* Espacio reservado para el indicador */}
+                    {!isBotTyping && messages.length > 0 && (
+                        <div className="h-6 mb-2" />
+                    )}
+
+                    {/* Botones de Opciones */}
+                    <div className="flex flex-wrap justify-end gap-3">
+                        {currentOptions.map((option, index) => (
+                            <button
+                                key={index}
+                                onClick={() => handleOptionClick(option)}
+                                disabled={isBotTyping}
+                                className="
+                                    bg-[#0210a1] backdrop-blur-sm text-gray-200
+                                    px-4 py-2 rounded-lg
+                                    
+                                    transition-all duration-200
+                                    hover:bg-indigo-500/90
+                                    disabled:opacity-30 disabled:cursor-not-allowed
+                                "
+                            >
+                                {option.text}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Botón de Reseteo */}
+                    {!isBotTyping && currentOptions.length === 0 && messages.length > 1 && (
+                        <div className="flex justify-end mt-4">
+                            <button
+                                onClick={startConversation} // Llama a la función de reseteo
+                                className="
+                                    bg-gray-700/50 backdrop-blur-sm text-gray-300
+                                    px-4 py-2 rounded-lg
+                                    border border-gray-600
+                                    transition-all duration-200
+                                    hover:bg-gray-600/90
+                                "
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                </svg>
+
+                            </button>
+                        </div>
+                    )}
+
+                </div>
+
+                <div className="flex p-4 bg-black/2 rounded-lg  items-center gap-2">
+                    <input disabled
+                        type="text" className="  w-full border-2 border-stone-500 rounded-lg p-2" placeholder="Escribe aquí..." />
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6 text-stone-500">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                    </svg>
+
+                </div>
+
             </section>
         </main>
     );
 }
-
-
