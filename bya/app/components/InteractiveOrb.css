@@ -1,76 +1,76 @@
-/* components/InteractiveOrb.css */
-
-/* Estilo base del Orbe (SIN COLOR) */
 #character-orb {
     position: relative;
     border-radius: 50%;
-    background: linear-gradient(to bottom left, #fff 15%, #00aaff 75%);
-    cursor: pointer;
+    background: none;
+    box-shadow: none;
     transition: transform 0.2s ease;
-    outline: none;
-    animation:
-        pop-in 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-        liquid-morph 10s infinite 0.6s ease-in-out;
+    filter: none;
 }
 
-#character-orb:focus-visible {
-    /* Un indicador de foco genérico, puedes cambiarlo */
-    outline: 3px solid Highlight;
-    outline: 3px solid -webkit-focus-ring-color;
-    outline-offset: 4px;
+.orb-aura {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    top: 0;
+    left: 0;
+
+    /* Gradiente radial base */
+    background: radial-gradient(circle at 50%,
+            rgb(0, 170, 255),
+            rgb(0, 170, 255) 30%,
+            rgb(0, 170, 255) 60%,
+            rgba(0, 170, 255, .9) 80%);
+
+    /* Filtro para el resplandor */
+    filter: blur(20px);
+
+    /* Valor inicial del box-shadow (puede ser ajustado) */
+    box-shadow: 0 0 10px 5px rgba(0, 170, 255, 0.5);
+
+    /* 💡 Animación combinada: pulso de escalado y brillo */
+    animation:
+        pulse-scale 1.5s infinite ease-in-out alternate,
+        pulse-shadow 1.5s infinite ease-in-out alternate;
 }
+
 
 .eye {
     position: absolute;
-    top: 40%;
+    top: 50%;
+    z-index: 10;
+    width: 40px;
+    height: 70px;
+    background-color: black;
+    border-radius: 50%;
     transform: translate(-50%, -50%);
+
     transition: all 0.1s ease;
+    filter: none;
 }
 
 #eye-left {
-    left: 40%;
+    left: 50%;
 }
 
 #eye-right {
-    left: 40%;
+    right: 50%;
 }
 
 #character-orb.laugh .eye {
     height: 8px;
-    top: 42%;
+    top: 50%;
 }
 
 @keyframes pop-in {
     from {
-        opacity: 0;
-        transform: scale(0.3);
+        opacity: 1;
+        transform: scale(0.5);
     }
 
     to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes liquid-morph {
-
-    0%,
-    100% {
-        border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%;
-        transform: scale(1);
-    }
-
-    25% {
-        border-radius: 40% 60% 70% 30% / 30% 50% 50% 70%;
-    }
-
-    50% {
-        border-radius: 70% 30% 40% 60% / 60% 30% 70% 40%;
-        transform: scale(1.02) translateY(-15px);
-    }
-
-    75% {
-        border-radius: 30% 70% 60% 40% / 70% 60% 30% 40%;
+        opacity: 2;
+        transform: scale(3);
     }
 }
 
@@ -81,5 +81,37 @@
 
     #character-orb.laugh .eye {
         transition: none;
+    }
+
+    .orb-aura {
+        animation: none;
+    }
+}
+
+@keyframes pulse-scale {
+    from {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    to {
+        /* Un poco más grande para el efecto de expansión */
+        transform: scale(1.05);
+        opacity: 1.2;
+        /* Opacidad al final del pulso */
+    }
+}
+
+/* Keyframes para la animación de box-shadow (ligeramente modificados) */
+@keyframes pulse-shadow {
+    from {
+        /* Brillo sutil */
+        box-shadow: 0 0 10px 5px rgba(0, 170, 255);
+    }
+
+    to {
+        /* Brillo más intenso y amplio */
+        box-shadow: 0 0 30px 15px rgba(0, 170, 255);
+        /* Aumenté el brillo y la extensión */
     }
 }

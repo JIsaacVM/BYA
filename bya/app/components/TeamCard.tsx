@@ -63,11 +63,29 @@ const TeamCard: React.FC<TeamCardProps> = ({ member }) => {
             >
                 {/* CAMBIO 2: Clases de transformación homologadas */}
                 <div
-                    className={`relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}
+                    className={`relative w-full h-full transition-transform duration-700`}
+                    // Inline styles with vendor prefixes ensure Firefox applies preserve-3d
+                    style={{
+                        WebkitTransformStyle: 'preserve-3d',
+                        transformStyle: 'preserve-3d',
+                        WebkitTransition: 'transform 0.7s',
+                        transition: 'transform 0.7s',
+                        WebkitTransform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                        transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                    }}
                 >
                     {/* Cara frontal */}
                     {/* CAMBIO 3: Homologado backface-hidden */}
-                    <div className="absolute inset-0 [backface-visibility:hidden] bg-gray-800 rounded-xl shadow-2xl overflow-hidden flex flex-col items-center justify-between p-6 transition-all duration-500 hover:scale-105 hover:shadow-blue-500/50">
+                    <div
+                        className="absolute inset-0 bg-gray-800 rounded-xl shadow-2xl overflow-hidden flex flex-col items-center justify-between p-6 transition-all duration-500 hover:scale-105 hover:shadow-blue-500/50"
+                        // ensure backface is hidden across browsers and explicitly set front face transform
+                        style={{
+                            WebkitBackfaceVisibility: 'hidden',
+                            backfaceVisibility: 'hidden',
+                            WebkitTransform: 'rotateY(0deg)',
+                            transform: 'rotateY(0deg)',
+                        }}
+                    >
                         <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-blue-700/30 to-transparent z-0"></div>
                         <div className="flex items-center justify-center mb-4 mt-6 z-10">
 
@@ -105,11 +123,20 @@ const TeamCard: React.FC<TeamCardProps> = ({ member }) => {
                                 </a>
                             )}
                         </div>
-                        _             </div>
+                    </div>
 
                     {/* Cara trasera */}
                     {/* CAMBIO 4: Homologado backface-hidden y transform */}
-                    <div className="absolute inset-1 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl shadow-2xl overflow-hidden flex flex-col items-center justify-center p-6">
+                    <div
+                        className="absolute inset-1 bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl shadow-2xl overflow-hidden flex flex-col items-center justify-center p-6"
+                        // ensure backface is hidden and set rotated transform for the back face
+                        style={{
+                            WebkitBackfaceVisibility: 'hidden',
+                            backfaceVisibility: 'hidden',
+                            WebkitTransform: 'rotateY(180deg)',
+                            transform: 'rotateY(180deg)',
+                        }}
+                    >
                         <div className="group relative w-fit h-64 mb-4 flex items-center justify-center">
                             <Image
                                 src={member.foto}

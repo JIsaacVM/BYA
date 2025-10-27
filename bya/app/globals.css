@@ -159,14 +159,6 @@ body,
 #__next,
 main {}
 
-/* --- SECCIONES PRINCIPALES --- */
-#hero {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 30vh;
-}
 
 .hero-text-container {
   transition: opacity 0.3s ease-out;

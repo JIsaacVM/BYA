@@ -111,6 +111,9 @@ const InteractiveOrb = forwardRef<InteractiveOrbHandle, InteractiveOrbProps>(
                 aria-label="Personaje interactivo, haz clic o pulsa Enter para interactuar"
                 style={{ width: size, height: size }}
             >
+                {/* Nuevo elemento para el aura difuminada - colocado primero para que quede debajo */}
+                <div className="orb-aura" aria-hidden="true"></div>
+
                 <div id="eye-left" className="eye" aria-hidden="true"></div>
                 <div id="eye-right" className="eye" aria-hidden="true"></div>
             </div>
