@@ -14,7 +14,7 @@ const proyectos: Proyecto[] = [
     { id: 3, titulo: "Proyecto Tres", descripcion: "Descripción del Proyecto Tres.", video: "/videos/feature-3.mp4", poster: "/videos/academy.webp" },
     { id: 4, titulo: "Proyecto Cuatro", descripcion: "Descripción del Proyecto Cuatro.", video: "/videos/feature-4.mp4", poster: "/videos/byaweb.webp" },
     { id: 5, titulo: "Proyecto Cinco", descripcion: "Descripción del Proyecto Cinco.", video: "/videos/feature-5.mp4", poster: "/videos/byaweb.webp" },
-    { id: 6, titulo: "Proyecto Seis", descripcion: "Descripción del Proyecto Seis.", video: "/videos/feature-6.mp4", poster: "/videos/byaweb.webp" },
+    { id: 6, titulo: "Proyecto Seis", descripcion: "Descripción del Proyecto Seis.", video: "/videos/feature-1.mp4", poster: "/videos/byaweb.webp" },
 ];
 
 // Componente para la Tarjeta (mantenida para integridad)

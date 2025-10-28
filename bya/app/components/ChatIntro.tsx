@@ -17,8 +17,8 @@ interface ChatOption {
 }
 
 // --- Constantes de Configuración ---
-const TASA_TECLEO_BOT = 40; // ms por caracter (debe coincidir con TypewriterText)
-const TASA_TECLEO_USER = 50; // ms por caracter (para simulación)
+const TASA_TECLEO_BOT = 15; // ms por caracter (debe coincidir con TypewriterText)
+const TASA_TECLEO_USER = 20; // ms por caracter (para simulación)
 const TIEMPO_PENSAMIENTO_BOT = 1000; // 1 segundo
 
 // --- Definimos el "ÁRBOL" de la conversación ---
@@ -61,16 +61,26 @@ export default function ScrollingChatOneByOne() {
     // --- (CAMBIO 1) ---
     // Ref para el contenedor principal del chat
     const chatContainerRef = useRef<HTMLElement>(null); // <-- AÑADIR LÍNEA
+    // Ref para almacenar la función de limpieza activa y evitar timers duplicados
+    const currentCleanupRef = useRef<(() => void) | undefined>(undefined);
 
     // --- LÓGICA DE LA CONVERSACIÓN ---
 
     /**
      * Inicia o reinicia la conversación al estado inicial.
      */
-    const startConversation = () => {
+    // startConversation now accepts an optional parameter `scrollTo`.
+    // If scrollTo is true, it will scroll the chat into view (used by the manual reset button).
+    // When started by the IntersectionObserver we call with scrollTo=false to avoid double-scrolling.
+    const startConversation = (scrollTo = false) => {
+        // Limpiar cualquier timers activos previos para evitar duplicados
+        if (currentCleanupRef.current) {
+            try { currentCleanupRef.current(); } catch { /* noop */ }
+            currentCleanupRef.current = undefined;
+        }
+
         // --- (CAMBIO 2) ---
-        // Hacemos scroll suave al inicio del contenedor del chat
-        chatContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); // <-- AÑADIR LÍNEA
+        if (scrollTo) chatContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
         // 1. Resetear estados
         setMessages([]);
@@ -107,11 +117,15 @@ export default function ScrollingChatOneByOne() {
         }, totalDelay + botResponseTime);
 
         // Devolvemos los timers para que puedan ser limpiados si el componente se desmonta
-        return () => {
+        const cleanup = () => {
             clearTimeout(fadeInTimer); // (MEJORA 2) Limpiar timer de fade-in
             clearTimeout(addBotMessageTimer);
             clearTimeout(showOptionsTimer);
         };
+
+        // Guardar cleanup para uso inmediato (reset manual, etc.)
+        currentCleanupRef.current = cleanup;
+        return cleanup;
     };
 
     /**
@@ -162,18 +176,59 @@ export default function ScrollingChatOneByOne() {
 
     // --- EFECTOS ---
 
-    // EFECTO 1: Inicialización (sin cambios)
+    // EFECTO 1: Iniciar conversación solamente cuando el componente entre en pantalla
     useEffect(() => {
-        const cleanup = startConversation();
-        return cleanup; // Limpia los timers al desmontar
-    }, []); // Array vacío = se ejecuta solo una vez al montar
+        const el = chatContainerRef.current;
+        if (!el) return;
 
-    // (MEJORA 1)
-    // --- EFECTO 2: Auto-scroll (ELIMINADO) ---
-    // Ya no hay useEffect para scrollIntoView
+        let cleanupFn: (() => void) | undefined;
 
+        if (typeof IntersectionObserver === 'undefined') {
+            // Fallback: si no hay IntersectionObserver, usar un comprobador por scroll/resize
+            const checkAndStart = () => {
+                try {
+                    const rect = el.getBoundingClientRect();
+                    const vh = window.innerHeight || document.documentElement.clientHeight;
+                    const visible = rect.top < vh * 0.75 && rect.bottom > vh * 0.05;
+                    if (visible && !cleanupFn) {
+                        cleanupFn = startConversation(false);
+                        // una vez iniciado, ya no necesitamos los listeners
+                        window.removeEventListener('scroll', checkAndStart);
+                        window.removeEventListener('resize', checkAndStart);
+                    }
+                } catch {
+                    // noop
+                }
+            };
 
-    // EFECTO 3: Fondo Interactivo (ORB + FLARES) (sin cambios)
+            window.addEventListener('scroll', checkAndStart, { passive: true });
+            window.addEventListener('resize', checkAndStart);
+            checkAndStart();
+
+            return () => {
+                window.removeEventListener('scroll', checkAndStart);
+                window.removeEventListener('resize', checkAndStart);
+                if (cleanupFn) cleanupFn();
+            };
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting && !cleanupFn) {
+
+                    cleanupFn = startConversation(false);
+                    try { observer.disconnect(); } catch { /* noop */ }
+                }
+            });
+        }, { threshold: 0.25 });
+
+        observer.observe(el);
+
+        return () => {
+            observer.disconnect();
+            if (cleanupFn) cleanupFn();
+        };
+    }, []);
     useEffect(() => {
         // ... (todo tu código original del useEffect del 'ia-orb' y 'ia-flare') ...
         const ORB_SIZE = 140; const halfW = ORB_SIZE / 2; const halfH = ORB_SIZE / 2;
@@ -269,7 +324,7 @@ export default function ScrollingChatOneByOne() {
                                 {/* Contenedor del Mensaje */}
                                 <div className={`
                                     max-w-md px-4 py-3 rounded-2xl shadow-lg
-                                    ${isUser ? "bg-[#0210a1]   text-gray-200  rounded-tr-none" : "rounded-none backdrop-blur-sm text-gray-300 border-b-2 border-gray-300"}
+                                    ${isUser ? "bg-[#0210a1]   text-gray-200  rounded-tr-none" : "rounded-none backdrop-blur-sm text-gray-300 "}
                                 `}
                                 >
                                     <div className="text-base md:text-lg leading-relaxed">
@@ -335,7 +390,7 @@ export default function ScrollingChatOneByOne() {
                     {!isBotTyping && currentOptions.length === 0 && messages.length > 1 && (
                         <div className="flex justify-end mt-4">
                             <button
-                                onClick={startConversation} // Llama a la función de reseteo
+                                onClick={() => startConversation(true)} // Llama a la función de reseteo y hace scroll
                                 className="
                                     bg-gray-700/50 backdrop-blur-sm text-gray-300
                                     px-4 py-2 rounded-lg

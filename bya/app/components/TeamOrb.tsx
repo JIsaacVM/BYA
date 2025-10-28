@@ -94,7 +94,6 @@ export default function TeamOrb({ color, size = 48 }: TeamOrbProps) {
                     width: size * 0.12,
                     height: size * 0.28,
                     background: "#000000",
-                    borderRadius: "50%",
                     boxShadow: "0 0 2px #0002",
                     transform: "translate(-50%, -50%)",
                     // AÑADIMOS LA TRANSICIÓN AQUÍ

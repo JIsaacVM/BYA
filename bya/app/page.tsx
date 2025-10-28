@@ -3,7 +3,7 @@
 
 // 1. 'Component' no se usaba, lo he eliminado.
 import React, { useEffect, useRef } from 'react';
-import ParticlesBg from 'particles-bg';
+import InteractiveBg from './components/InteractiveBg';
 import HeroSection from './components/HeroSection';
 import ChatIntro from './components/ChatIntro';
 import OurTeam from './components/OurTeam';
@@ -73,16 +73,26 @@ export default function Page() {
     };
   }, []);
 
+  // Evitar que al cargar la página con #conversar se haga scroll automático al chat.
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && location.hash === '#conversar') {
+        // Borrar el hash sin añadir entrada al history
+        history.replaceState(null, '', location.pathname + location.search);
+        // Forzar scroll al tope (Hero) para que la página comience ahí
+        window.scrollTo({ top: 0, left: 0 });
+      }
+    } catch {
+      // noop
+    }
+  }, []);
+
   return (
     <div className="font-roboto">
       <main>
         <div className=''>
-          <div className="absolute inset-0 z-[-10] w-full h-screen flex items-center justify-center">
-            <ParticlesBg
-              type="cobweb"
-              color='#00aaff'
-              bg={true}
-            />
+          <div className="absolute inset-0 z-[-10] w-full h-screen flex items-center justify-center bg-[#07000D]">
+            <InteractiveBg />
           </div>
           <HeroSection />
         </div>

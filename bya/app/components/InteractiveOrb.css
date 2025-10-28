@@ -44,7 +44,6 @@
     background-color: black;
     border-radius: 50%;
     transform: translate(-50%, -50%);
-
     transition: all 0.1s ease;
     filter: none;
 }
@@ -95,23 +94,17 @@
     }
 
     to {
-        /* Un poco más grande para el efecto de expansión */
         transform: scale(1.05);
         opacity: 1.2;
-        /* Opacidad al final del pulso */
     }
 }
 
-/* Keyframes para la animación de box-shadow (ligeramente modificados) */
 @keyframes pulse-shadow {
     from {
-        /* Brillo sutil */
         box-shadow: 0 0 10px 5px rgba(0, 170, 255);
     }
 
     to {
-        /* Brillo más intenso y amplio */
         box-shadow: 0 0 30px 15px rgba(0, 170, 255);
-        /* Aumenté el brillo y la extensión */
     }
 }
