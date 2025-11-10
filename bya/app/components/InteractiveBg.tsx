@@ -17,125 +17,141 @@ export default function InteractiveBg() {
         canvas.width = width;
         canvas.height = height;
 
-        const particles: { x: number; y: number; vx: number; vy: number; size: number; hue: number }[] = [];
+        // Grid of nodes (square aesthetic). Nodes are off by default and light up when pointer is nearby.
+        const spacing = Math.max(38, Math.floor(Math.min(width, height) / 20));
+        let cols = Math.ceil(width / spacing) + 1;
+        let rows = Math.ceil(height / spacing) + 1;
 
-        const spawnParticle = (x: number, y: number) => {
-            // fewer, more elegant particles with controlled speed and hue
-            const angle = Math.random() * Math.PI * 2;
-            const speed = 0.6 + Math.random() * 0.8;
-            particles.push({
-                x,
-                y,
-                vx: Math.cos(angle) * speed * 0.6,
-                vy: Math.sin(angle) * speed * 0.6,
-                size: 1.2 + Math.random() * 2.2,
-                hue: 190 + Math.random() * 60, // cyan-magenta range
-            });
-            // keep particle count bounded
-            if (particles.length > 140) particles.splice(0, particles.length - 140);
-        };
+        type Node = { x: number; y: number; i: number }; // i = intensity 0..1
+        let nodes: Node[] = [];
 
-        const onMove = (e: PointerEvent) => {
+        function buildGrid() {
+            nodes = [];
+            cols = Math.ceil(width / spacing) + 1;
+            rows = Math.ceil(height / spacing) + 1;
+            const offsetX = (width - (cols - 1) * spacing) / 2;
+            const offsetY = (height - (rows - 1) * spacing) / 2;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    nodes.push({ x: offsetX + c * spacing, y: offsetY + r * spacing, i: 0 });
+                }
+            }
+        }
+
+        buildGrid();
+
+        const radius = spacing * 0.9; // influence radius
+
+        const onMoveGrid = (e: PointerEvent) => {
             pointer.current.x = e.clientX;
             pointer.current.y = e.clientY;
-            // spawn a single elegant particle per move event (low spawn rate for finesse)
-            spawnParticle(e.clientX, e.clientY);
+            // light up nearby nodes
+            for (const n of nodes) {
+                const dx = n.x - e.clientX;
+                const dy = n.y - e.clientY;
+                const d = Math.sqrt(dx * dx + dy * dy);
+                if (d < radius) {
+                    const val = 1 - d / radius;
+                    // boost intensity smoothly
+                    if (val > n.i) n.i = val;
+                }
+            }
         };
 
-        const onLeave = () => {
+        const onLeaveGrid = () => {
             pointer.current.x = -9999; pointer.current.y = -9999;
         };
 
-        window.addEventListener('pointermove', onMove, { passive: true });
-        window.addEventListener('pointerout', onLeave);
+        window.addEventListener('pointermove', onMoveGrid, { passive: true });
+        window.addEventListener('pointerout', onLeaveGrid);
         window.addEventListener('resize', onResize);
 
-        function onResize() {
+        function onResizeGrid() {
             if (!canvas) return;
             width = window.innerWidth;
             height = window.innerHeight;
             canvas.width = width;
             canvas.height = height;
+            buildGrid();
         }
 
-        function draw() {
+        // draw function for grid
+        function drawGrid() {
             if (!ctx) return;
-            // soft trail for elegant persistence
-            ctx.fillStyle = 'rgba(2,4,10,0.12)';
+
+            // --- INICIO DE LA CORRECCIÓN ---
+            // Borra el canvas completamente con el color de fondo opaco.
+            // Cambiado a negro puro (rgb(0,0,0))
+            ctx.fillStyle = 'rgb(0, 0, 0)';
             ctx.fillRect(0, 0, width, height);
+            // --- FIN DE LA CORRECCIÓN ---
 
-            const time = performance.now() * 0.0006;
+            // draw nodes as soft squares
+            for (let i = 0; i < nodes.length; i++) {
+                const n = nodes[i];
+                // decay intensity
+                n.i *= 0.90;
+                if (n.i < 0.003) { n.i = 0; continue; }
 
-            // draw particles with additive blending for neon look
-            ctx.globalCompositeOperation = 'lighter';
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
+                const intensity = Math.min(1, n.i);
+                const size = spacing * 0.26 + intensity * spacing * 0.36;
 
-                // subtle flow-field influence for futuristic motion
-                const flowX = Math.sin((p.y * 0.002) + time) * 0.12;
-                const flowY = Math.cos((p.x * 0.002) - time) * 0.12;
-                p.vx += flowX * 0.08;
-                p.vy += flowY * 0.08;
+                // neon color base
+                const hue = 195; // cyan-blue
+                const alpha = 0.12 + intensity * 0.9;
 
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vx *= 0.985; p.vy *= 0.985;
-                p.size *= 0.996;
-
-                // gentle attraction to pointer
-                const dx = pointer.current.x - p.x;
-                const dy = pointer.current.y - p.y;
-                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                if (dist < 140) {
-                    const force = (140 - dist) * 0.0015;
-                    p.vx += (dx / dist) * force;
-                    p.vy += (dy / dist) * force;
-                }
-
-                // glow using shadowBlur for smooth neon
+                // glow
                 ctx.save();
-                ctx.shadowBlur = Math.max(8, p.size * 8);
-                ctx.shadowColor = `hsla(${p.hue},100%,65%,0.9)`;
-                ctx.fillStyle = `hsla(${p.hue},95%,60%,0.85)`;
+                ctx.shadowBlur = 14 * intensity;
+                ctx.shadowColor = `hsla(${hue},100%,65%,${0.9 * intensity})`;
+                ctx.fillStyle = `hsla(${hue},95%,60%,${alpha})`;
+                // draw rounded rect (approx using arc corners)
+                const x = n.x - size / 2;
+                const y = n.y - size / 2;
+                const r = Math.max(2, size * 0.18);
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, Math.max(0.4, p.size * 0.7), 0, Math.PI * 2);
+                ctx.moveTo(x + r, y);
+                ctx.lineTo(x + size - r, y);
+                ctx.quadraticCurveTo(x + size, y, x + size, y + r);
+                ctx.lineTo(x + size, y + size - r);
+                ctx.quadraticCurveTo(x + size, y + size, x + size - r, y + size);
+                ctx.lineTo(x + r, y + size);
+                ctx.quadraticCurveTo(x, y + size, x, y + size - r);
+                ctx.lineTo(x, y + r);
+                ctx.quadraticCurveTo(x, y, x + r, y);
+                ctx.closePath();
                 ctx.fill();
                 ctx.restore();
-
-                if (p.size < 0.45 || p.x < -50 || p.x > width + 50 || p.y < -50 || p.y > height + 50) particles.splice(i, 1);
             }
 
-            // refined connective lines
-            ctx.lineWidth = 0.6;
-            for (let a = 0; a < particles.length; a++) {
-                for (let b = a + 1; b < particles.length && b < a + 10; b++) {
-                    const pa = particles[a]; const pb = particles[b];
-                    const dx = pa.x - pb.x; const dy = pa.y - pb.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < 100) {
-                        const alpha = (100 - dist) / 180;
-                        // gradient between the two particle hues
-                        ctx.strokeStyle = `rgba(160,220,255,${alpha * 0.9})`;
-                        ctx.beginPath();
-                        ctx.moveTo(pa.x, pa.y);
-                        ctx.lineTo(pb.x, pb.y);
-                        ctx.stroke();
+            // optional faint grid lines where nodes lit
+            ctx.strokeStyle = 'rgba(100,170,255)';
+            ctx.lineWidth = 1;
+            for (let r = 0; r < rows; r++) {
+                const base = r * cols;
+                for (let c = 0; c < cols - 1; c++) {
+                    const n = nodes[base + c];
+                    const m = nodes[base + c + 1];
+                    const w = (n.i + m.i) * 0.5;
+                    if (w > 0.02) {
+                        ctx.strokeStyle = `rgba(140,170,255,${w * 0.06})`;
+                        ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(m.x, m.y); ctx.stroke();
                     }
                 }
             }
 
-            // restore composite for any other drawing
-            ctx.globalCompositeOperation = 'source-over';
-
-            rafRef.current = requestAnimationFrame(draw);
+            rafRef.current = requestAnimationFrame(drawGrid);
         }
 
-        rafRef.current = requestAnimationFrame(draw);
+        // wire up resize handler to grid-specific
+        function onResize() { onResizeGrid(); }
+
+        rafRef.current = requestAnimationFrame(drawGrid);
 
         return () => {
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
-            window.removeEventListener('pointermove', onMove);
-            window.removeEventListener('pointerout', onLeave);
+            window.removeEventListener('pointermove', onMoveGrid);
+            window.removeEventListener('pointerout', onLeaveGrid);
             window.removeEventListener('resize', onResize);
         };
     }, []);

@@ -17,7 +17,7 @@ interface ChatOption {
 }
 
 // --- Constantes de Configuración ---
-const TASA_TECLEO_BOT = 15; // ms por caracter (debe coincidir con TypewriterText)
+const TASA_TECLEO_BOT = 5; // ms por caracter (debe coincidir con TypewriterText)
 const TASA_TECLEO_USER = 20; // ms por caracter (para simulación)
 const TIEMPO_PENSAMIENTO_BOT = 1000; // 1 segundo
 
@@ -324,7 +324,7 @@ export default function ScrollingChatOneByOne() {
                                 {/* Contenedor del Mensaje */}
                                 <div className={`
                                     max-w-md px-4 py-3 rounded-2xl shadow-lg
-                                    ${isUser ? "bg-[#0210a1]   text-gray-200  rounded-tr-none" : "rounded-none backdrop-blur-sm text-gray-300 "}
+                                    ${isUser ? "bg-[rgb(0,170,255)]   text-gray-200  rounded-tr-none" : "rounded-none backdrop-blur-sm text-gray-300 "}
                                 `}
                                 >
                                     <div className="text-base md:text-lg leading-relaxed">
@@ -339,7 +339,7 @@ export default function ScrollingChatOneByOne() {
                                 {/* Avatar del Usuario */}
                                 {isUser && (
                                     <div className="flex-shrink-0 mt-1">
-                                        <div className="w-9 h-9 rounded-full bg-[#0210a1] flex items-center justify-center text-sm font-bold shadow-lg">
+                                        <div className="w-9 h-9 rounded-full bg-[rgb(0,170,255)] flex items-center justify-center text-sm font-bold shadow-lg">
                                             U
                                         </div>
                                     </div>
@@ -373,7 +373,7 @@ export default function ScrollingChatOneByOne() {
                                 onClick={() => handleOptionClick(option)}
                                 disabled={isBotTyping}
                                 className="
-                                    bg-[#0210a1] backdrop-blur-sm text-gray-200
+                                    bg-[rgb(0,170,255)] backdrop-blur-sm text-gray-200
                                     px-4 py-2 rounded-lg
                                     
                                     transition-all duration-200

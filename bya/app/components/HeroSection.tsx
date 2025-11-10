@@ -6,7 +6,7 @@ import TypewriterText from './TypewriterText';
 
 export default function HeroSection() {
     return (
-        <section id="hero" className="h-screen snap-start flex items-center my-16 ">
+        <div id="hero" className="h-screen snap-start flex items-center my-16 ">
             <div className="hero-text-container w-full h-fit px-4 flex flex-col md:flex-row items-center justify-center text-center md:text-left">
 
 
@@ -24,6 +24,6 @@ export default function HeroSection() {
 
 
             </div>
-        </section>
+        </div>
     );
 }

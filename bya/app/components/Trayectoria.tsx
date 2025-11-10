@@ -9,12 +9,29 @@ interface Proyecto {
 }
 
 const proyectos: Proyecto[] = [
-    { id: 1, titulo: "Proyecto Uno", descripcion: "Descripción del Proyecto Uno.", video: "/videos/feature-1.mp4", poster: "/videos/lumina.webp" },
-    { id: 2, titulo: "Proyecto Dos", descripcion: "Descripción del Proyecto Dos.", video: "/videos/feature-2.mp4", poster: "/videos/core.webp" },
-    { id: 3, titulo: "Proyecto Tres", descripcion: "Descripción del Proyecto Tres.", video: "/videos/feature-3.mp4", poster: "/videos/academy.webp" },
-    { id: 4, titulo: "Proyecto Cuatro", descripcion: "Descripción del Proyecto Cuatro.", video: "/videos/feature-4.mp4", poster: "/videos/byaweb.webp" },
-    { id: 5, titulo: "Proyecto Cinco", descripcion: "Descripción del Proyecto Cinco.", video: "/videos/feature-5.mp4", poster: "/videos/byaweb.webp" },
-    { id: 6, titulo: "Proyecto Seis", descripcion: "Descripción del Proyecto Seis.", video: "/videos/feature-1.mp4", poster: "/videos/byaweb.webp" },
+    {
+        id: 1,
+        titulo: "LUMINA",
+        descripcion: "Lumina es nuestro asistente virtual entrenado con herramientas y datos del grupo. Apoya al equipo en tareas administrativas, análisis de datos, respuestas operativas, generación de documentación y más. Es una herramienta viva que aprende y se adapta continuamente.",
+        video: "/videos/feature-1.mp4",
+        poster: "/videos/lumina.webp"
+    },
+    {
+        id: 2,
+        titulo: "CORE",
+        descripcion: "Core es la columna vertebral tecnológica de BYA. Integra diversos sistemas como CRM, administración, marketing, atención al cliente, gestión de usuarios y más. Diseñado desde cero para adaptarse a las operaciones del grupo, ofrece flexibilidad, escalabilidad y una interfaz modular que evoluciona junto con las necesidades del negocio.",
+        video: "/videos/feature-2.mp4",
+        poster: "/videos/core.webp"
+    },
+    {
+        id: 3,
+        titulo: "ACADEMY",
+        descripcion: "Academy está enfocada en la gestión de contenidos educativos, capacitación interna y formación de aliados externos. Permite estructurar cursos, administrar usuarios, evaluar progresos y generar reportes, todo desde una plataforma accesible y profesional.",
+        video: "/videos/feature-3.mp4",
+        poster: "/videos/academy.webp"
+    },
+
+
 ];
 
 // Componente para la Tarjeta (mantenida para integridad)
@@ -43,7 +60,7 @@ const ProyectoCard = ({ proyecto, activeId, setActiveId }: { proyecto: Proyecto,
                     className="absolute inset-0 flex items-center justify-center bg-black/30 text-white text-[2rem] font-bold pointer-events-none transition-opacity duration-300 opacity-0 group-hover:opacity-100"
                     style={{ opacity: isActive ? 0 : undefined }}
                 >
-                    <span>{proyecto.titulo}</span>
+
                 </div>
             </div>
 
@@ -60,14 +77,9 @@ const ProyectoCard = ({ proyecto, activeId, setActiveId }: { proyecto: Proyecto,
                     className={`p-6 pl-0 w-full box-border transition-all duration-350 ease-in-out ${isActive ? "opacity-100 translate-x-0" : "opacity-0 translate-x-[10px]"
                         }`}
                 >
-                    <h3 className="mb-2 text-xl">{proyecto.titulo}</h3>
-                    <p className="m-0 text-gray-300">{proyecto.descripcion}</p>
-                    <button
-                        onClick={() => setActiveId(null)}
-                        className="mt-4 bg-transparent text-white border border-white/20 py-[0.4rem] px-[0.6rem] rounded-md cursor-pointer transition-colors hover:bg-white/10"
-                    >
-                        Cerrar
-                    </button>
+                    <p className="mb-2 text-xl font-extrabold">{proyecto.titulo}</p>
+                    <p className="m-2 text-gray-300">{proyecto.descripcion}</p>
+
                 </div>
             </div>
         </React.Fragment>

@@ -91,9 +91,9 @@ const TeamCard: React.FC<TeamCardProps> = ({ member }) => {
 
                             <TeamOrb color={member.orbColors} size={100} />
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-50 mt-4 group-hover:text-blue-300 transition-colors duration-300">
+                        <p className="text-2xl font-bold text-gray-50 mt-4 group-hover:text-blue-300 transition-colors duration-300 text-center">
                             {member.nombre}
-                        </h3>
+                        </p>
                         <p className="text-md font-semibold text-blue-400 mb-4">
                             {member.puesto}
                         </p>
@@ -156,7 +156,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ member }) => {
                         <p className="text-xl font-bold text-indigo-600 mb-1">
                             BYA TEAM
                         </p>
-                        <p className="text-2xl font-bold text-gray-50 mb-4">
+                        <p className="text-2xl font-bold text-center text-gray-50 mb-4">
                             {member.nombre}
                         </p>
 

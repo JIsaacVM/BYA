@@ -95,9 +95,9 @@ export default function EquipoPage() {
     return (
         <div className="min-h-screen text-gray-100 py-16">
             <div className="container mx-auto px-4">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+                <p className="text-4xl md:text-5xl font-extrabold text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
                     Conoce a Nuestro Equipo Estelar
-                </h1>
+                </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 justify-items-center">
                     {teamData.map((member) => (
