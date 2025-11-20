@@ -89,16 +89,17 @@ export default function Page() {
 
   return (
     <div className="font-roboto">
-      <main>
+      <main className=''>
         <div className=''>
-          <div className="absolute inset-0 z-[-10] w-full h-screen flex items-center justify-center bg-[#07000D]">
+          <div className="absolute inset-0 z-[-10] w-full h-screen flex items-center justify-center bg-[#000000]">
             <InteractiveBg />
           </div>
           <HeroSection />
         </div>
-        <ChatIntro />
-        <OurTeam />
-        <Trayectoria />
+        <div className='bg-black'>
+          <ChatIntro />
+          <OurTeam />
+          <Trayectoria /></div>
       </main >
     </div >
   );
