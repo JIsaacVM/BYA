@@ -29,7 +29,7 @@ export default function Header() {
                 <ul className="flex items-center justify-center gap-6 px-8 py-3 text-sm font-light">
                     <li><a href="#hero" className="nav-link hover:text-blue-400 transition-colors">Inicio</a></li>
                     <li><a href="#conversar" className="nav-link hover:text-blue-400 transition-colors">Conversar</a></li>
-                    <li><a href="#" className="nav-link hover:text-blue-400 transition-colors">Proyecto</a></li>
+                    <li><a href="#proyectos" className="nav-link hover:text-blue-400 transition-colors">Proyectos</a></li>
                 </ul>
             </nav>
         </header>

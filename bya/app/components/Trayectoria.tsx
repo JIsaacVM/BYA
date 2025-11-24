@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useState } from "react";
+import Marquee from "../components/magicui/marquee"; // Ajusta la ruta según donde guardaste el archivo del paso 3
 
 interface Proyecto {
     id: number;
@@ -30,18 +31,17 @@ const proyectos: Proyecto[] = [
         video: "/videos/feature-3.mp4",
         poster: "/videos/academy.webp"
     },
-
-
 ];
 
-// Componente para la Tarjeta (mantenida para integridad)
+// Componente Tarjeta (Sin cambios mayores, solo ajuste de márgenes)
 const ProyectoCard = ({ proyecto, activeId, setActiveId }: { proyecto: Proyecto, activeId: number | null, setActiveId: (id: number | null) => void }) => {
     const isActive = activeId === proyecto.id;
     return (
-        <React.Fragment key={proyecto.id}>
-            {/* Card */}
+        <React.Fragment>
             <div
-                className="m-8 mr-0 group relative min-w-[350px] h-[350px] rounded-l-2xl overflow-hidden shadow-xl cursor-pointer bg-gray-700 flex items-center justify-center"
+                id="proyectos"
+                className="group relative min-w-[350px] h-[350px] rounded-l-2xl overflow-hidden shadow-xl cursor-pointer flex items-center justify-center transition-all duration-300"
+                // Eliminamos el margen m-8 para dejar que el Marquee controle el gap
                 onClick={() => setActiveId(isActive ? null : proyecto.id)}
             >
                 <video
@@ -56,11 +56,12 @@ const ProyectoCard = ({ proyecto, activeId, setActiveId }: { proyecto: Proyecto,
                     className={`w-full h-full object-cover transition-all duration-300 ${isActive ? "blur-[2px] brightness-75" : ""
                         }`}
                 />
+                {/* Overlay hover */}
                 <div
-                    className="absolute inset-0 flex items-center justify-center bg-black/30 text-white text-[2rem] font-bold pointer-events-none transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                    className="absolute inset-0 flex items-center justify-center text-[2rem] font-bold pointer-events-none transition-opacity duration-300 opacity-0 group-hover:opacity-100"
                     style={{ opacity: isActive ? 0 : undefined }}
                 >
-
+                    {/* Puedes poner un icono o texto aquí si quieres */}
                 </div>
             </div>
 
@@ -78,85 +79,40 @@ const ProyectoCard = ({ proyecto, activeId, setActiveId }: { proyecto: Proyecto,
                         }`}
                 >
                     <p className="mb-2 text-xl font-extrabold">{proyecto.titulo}</p>
-                    <p className="m-2 text-gray-300">{proyecto.descripcion}</p>
-
+                    <p className="m-2 text-gray-300 text-sm">{proyecto.descripcion}</p>
                 </div>
             </div>
         </React.Fragment>
     );
 };
 
-// ---
+// --- Componente Principal ---
 
 export default function Trayectoria() {
-    const containerRef = useRef<HTMLDivElement>(null);
     const [activeId, setActiveId] = useState<number | null>(null);
 
-    // Nota: eliminada la referencia rAF para simplificar el comportamiento de scroll
-
-    // (IntersectionObserver eliminado — el scroll se maneja mientras el componente esté montado)
-
-    // Control simple y robusto del scroll horizontal a partir del wheel vertical
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const onWheel = (e: WheelEvent) => {
-            // Normalizar deltaY
-            const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
-
-            // Si no hay overflow horizontal, permitir el scroll vertical de la página
-            if (container.scrollWidth <= container.clientWidth) return;
-
-            const atStart = container.scrollLeft <= 0;
-            const atEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 1;
-
-            const goingDown = delta > 0;
-            const goingUp = delta < 0;
-
-            // Si estamos en el extremo y el usuario intenta seguir en esa dirección, dejar que la página haga scroll
-            if ((goingDown && atEnd) || (goingUp && atStart)) {
-                return;
-            }
-
-            // Prevenir el scroll vertical y desplazar horizontalmente
-            e.preventDefault();
-            container.scrollLeft += delta;
-        };
-
-        container.addEventListener("wheel", onWheel, { passive: false });
-        return () => container.removeEventListener("wheel", onWheel);
-    }, []);
-
-    // ---
-
     return (
-        <section
-            ref={containerRef}
-            // Eliminamos scroll-smooth para evitar conflictos con la animación rAF
-            className="trayectoria-container flex overflow-x-auto overflow-y-hidden py-8 h-[400px] items-center relative"
-        >
-            {proyectos.map((proyecto) => (
-                <ProyectoCard
-                    key={proyecto.id}
-                    proyecto={proyecto}
-                    activeId={activeId}
-                    setActiveId={setActiveId}
-                />
-            ))}
+        <section className="relative flex h-[500px] w-full flex-col items-center justify-center overflow-hidden bg-black py-8">
 
-            <style jsx>{`
-                .trayectoria-container {
-                    /* Ocultar scrollbar */
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                    /* Permitir gestos táctiles verticales por defecto */
-                    touch-action: pan-y;
-                }
-                .trayectoria-container::-webkit-scrollbar {
-                    display: none;
-                }
-            `}</style>
+            {/* Magic UI Marquee */}
+            <Marquee pauseOnHover className="[--duration:40s] [--gap:2rem]">
+                {proyectos.map((proyecto) => (
+                    <div key={proyecto.id} className="flex items-center">
+                        {/* Envolvemos en un div simple para mantener Card+Drawer juntos en el flujo flex */}
+                        <ProyectoCard
+                            proyecto={proyecto}
+                            activeId={activeId}
+                            setActiveId={setActiveId}
+                        />
+                    </div>
+                ))}
+            </Marquee>
+
+            {/* Degradado lateral izquierdo (Efecto visual opcional recomendado por Magic UI) */}
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-1/6 bg-gradient-to-r from-black to-transparent dark:from-background"></div>
+
+            {/* Degradado lateral derecho */}
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-1/6 bg-gradient-to-l from-black to-transparent dark:from-background"></div>
         </section>
     );
 }

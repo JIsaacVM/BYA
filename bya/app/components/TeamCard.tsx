@@ -91,13 +91,13 @@ const TeamCard: React.FC<TeamCardProps> = ({ member }) => {
 
                             <TeamOrb color={member.orbColors} size={100} />
                         </div>
-                        <p className="text-2xl font-bold text-gray-50 mt-4 group-hover:text-blue-300 transition-colors duration-300 text-center">
+                        <p className="text-xl font-bold text-gray-50 mt-3 group-hover:text-blue-300 transition-colors duration-300 text-center">
                             {member.nombre}
                         </p>
                         <p className="text-md font-semibold text-blue-400 mb-4">
                             {member.puesto}
                         </p>
-                        <div className="bg-gray-900 px-4 py-3 border-t border-gray-700 w-full flex justify-center gap-6">
+                        <div className="bg-gray-900 px-3 py-3 border-t border-gray-700 w-full flex justify-center gap-6">
                             {member.socials.github && (
                                 <a
                                     href={member.socials.github}
@@ -128,7 +128,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ member }) => {
                     {/* Cara trasera */}
                     {/* CAMBIO 4: Homologado backface-hidden y transform */}
                     <div
-                        className="absolute inset-1 bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl shadow-2xl overflow-hidden flex flex-col items-center justify-center p-6"
+                        className="absolute inset-1 bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl shadow-2xl overflow-hidden flex flex-col items-center justify-center p-4"
                         // ensure backface is hidden and set rotated transform for the back face
                         style={{
                             WebkitBackfaceVisibility: 'hidden',
